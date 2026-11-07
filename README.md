@@ -8,7 +8,7 @@ Press **X** in game, and Blender opens on a template with **the real Flippy** in
 accessory shows up on Flippy **within a second, live**, and tumbles with him.
 
 Everything is client-side, so it's safe in multiplayer. Other players see your normal Flippy, unless they also run
-[FIH Sync](https://github.com/Fabuleo8796/FIHSync), which shows modded players each other's accessories
+**FIH Sync** (coming soon), which shows modded players each other's accessories
 automatically (animations too; videos only from friends, unless you change it).
 
 ## How to use it
