@@ -1,7 +1,7 @@
 # Writes a csc response file for a Body Accessories plugin build (no .NET SDK on this PC: Unity's bundled Roslyn compiles).
 # python tools/make_rsp.py <name> <out dll> <source folder> [<source folder> ...]  -> _private/<name>.rsp
 # References: the game's dotnet runtime (mscorlib, netstandard, System.*), BepInEx core, and every BepInEx\interop
-# DLL except the 3 KB UnityEngine.dll facade (CLAUDE.md trap 3). The interop folder is listed fresh each time,
+# DLL except the 3 KB UnityEngine.dll facade (modding kit trap 3). The interop folder is listed fresh each time,
 # because game updates add and drop DLLs.
 import os
 import sys

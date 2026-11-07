@@ -4,7 +4,7 @@ Run:  blender --background --factory-startup --python make_template.py -- <out.b
 
 Axes: Blender +Z = up the phone, Blender -Y = out of the screen (Blender's Front view looks at the screen),
 Blender +X = the phone's right. 1 Blender unit = 1 game unit. The mod maps this onto Flippy's body
-(game local = (x, -y, z)). Sizes come from the game's cover meshes (fih-modding-kit CLAUDE.md, "Phone shape"):
+(game local = (x, -y, z)). Sizes come from the game's cover meshes (fih-modding-kit the modding kit notes, "Phone shape"):
 x +-0.436, front 0.190 / back 0.167, bottom -0.997 / top 1.052, corners rounded ~0.17, screen z 0.16-0.70.
 The stand-in is our own simple model, not the game's mesh."""
 import math
