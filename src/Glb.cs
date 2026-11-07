@@ -76,13 +76,16 @@ internal static class Glb
 
         public Gltf(JsonElement root, byte[] bin) { this.root = root; this.bin = bin; }
 
-        public void Node(int index, Matrix4x4 parent, List<Part> parts)
+        int visits; // files from other players (FIH Sync) can be broken on purpose: no endless node loops
+
+        public void Node(int index, Matrix4x4 parent, List<Part> parts, int depth = 0)
         {
+            if (depth > 64 || ++visits > 4096) throw new InvalidDataException("too many nested objects");
             var node = root.GetProperty("nodes")[index];
             var world = Local(node) * parent; // System.Numerics uses row vectors: child first, then parent
             if (node.TryGetProperty("mesh", out var m)) Mesh(m.GetInt32(), world, node.TryGetProperty("name", out var nm) ? nm.GetString() : $"node {index}", parts);
             if (node.TryGetProperty("children", out var kids))
-                foreach (var k in kids.EnumerateArray()) Node(k.GetInt32(), world, parts);
+                foreach (var k in kids.EnumerateArray()) Node(k.GetInt32(), world, parts, depth + 1);
         }
 
         static Matrix4x4 Local(JsonElement node)
@@ -155,6 +158,7 @@ internal static class Glb
                 else { idx = new int[count]; for (int i = 0; i < count; i++) idx[i] = i; }
                 // the axis swap mirrors; a mirrored node mirrors again
                 bool flip = !mirrored;
+                foreach (int i in idx) if ((uint)i >= (uint)count) throw new InvalidDataException("a triangle points past the mesh");
                 p.Triangles = new int[idx.Length - idx.Length % 3];
                 for (int i = 0; i + 2 < idx.Length; i += 3)
                 {
@@ -210,6 +214,7 @@ internal static class Glb
             var view = View(a.GetProperty("bufferView").GetInt32(), out int stride);
             int off = a.TryGetProperty("byteOffset", out var o) ? o.GetInt32() : 0;
             if (stride == 0) stride = size * comps;
+            Fits(count, off, stride, size * comps, view.Length);
             var outv = new float[count * comps];
             for (int i = 0; i < count; i++)
                 for (int c = 0; c < comps; c++)
@@ -227,6 +232,13 @@ internal static class Glb
             return outv;
         }
 
+        /// The accessor's claimed count must fit in its buffer, before anything gets allocated for it.
+        static void Fits(int count, int off, int stride, int element, int length)
+        {
+            if (count < 0 || off < 0 || stride <= 0 || (count > 0 && off + (long)(count - 1) * stride + element > length))
+                throw new InvalidDataException("an accessor is bigger than its data");
+        }
+
         int[] Ints(int accessor)
         {
             var a = root.GetProperty("accessors")[accessor];
@@ -234,6 +246,8 @@ internal static class Glb
             int ct = a.GetProperty("componentType").GetInt32();
             var view = View(a.GetProperty("bufferView").GetInt32(), out _);
             int off = a.TryGetProperty("byteOffset", out var o) ? o.GetInt32() : 0;
+            int size = ct == 5125 ? 4 : ct == 5123 ? 2 : 1;
+            Fits(count, off, size, size, view.Length);
             var outv = new int[count];
             for (int i = 0; i < count; i++)
                 outv[i] = ct switch

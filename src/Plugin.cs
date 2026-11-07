@@ -20,7 +20,7 @@ namespace BodyAccessories;
 [BepInDependency("com.fabuleo8796.fihsync", BepInDependency.DependencyFlags.SoftDependency)]
 public class Plugin : BasePlugin
 {
-    public const string Guid = "com.fabuleo8796.bodyaccessories", Version = "0.2.0";
+    public const string Guid = "com.fabuleo8796.bodyaccessories", Version = "0.2.1";
     internal static ManualLogSource Logger;
     internal static string Folder;
     internal static ConfigEntry<Key> OpenKey;
