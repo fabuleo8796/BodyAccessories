@@ -15,11 +15,12 @@ namespace BodyAccessories;
 /// Flippy model. Blender opens on a template with the real plain Flippy, copied from your own game. Its "Export to
 /// FIH" button (or just saving) writes a .glb into BepInEx\config\BodyAccessories\accessories, and the game puts it
 /// on Flippy within a second. Shift+X: accessories on/off.
-/// Rigid models only: no animation, no physics. Client-side only: other players don't see them.
+/// Animations and video textures loop like Blender's timeline. With FIH Sync installed, other modded players see them.
 [BepInPlugin(Guid, "Body Accessories", Version)]
+[BepInDependency("com.fabuleo8796.fihsync", BepInDependency.DependencyFlags.SoftDependency)]
 public class Plugin : BasePlugin
 {
-    public const string Guid = "com.fabuleo8796.bodyaccessories", Version = "0.1.0";
+    public const string Guid = "com.fabuleo8796.bodyaccessories", Version = "0.2.0";
     internal static ManualLogSource Logger;
     internal static string Folder;
     internal static ConfigEntry<Key> OpenKey;

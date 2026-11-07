@@ -11,6 +11,8 @@ namespace BodyAccessories;
 internal sealed class Part
 {
     public string Name = "";
+    public string Node = "";                          // the Blender object it came from (its animation track)
+    public string Material = "";                      // its material's name (video textures are matched by it)
     public float[] Positions = Array.Empty<float>(); // x, y, z per vertex
     public float[] Normals;                           // or null: the mod recalculates them
     public float[] Uvs;                               // u, v per vertex (Unity's v, bottom up), or null
@@ -124,7 +126,7 @@ internal static class Glb
                 if (prim.TryGetProperty("mode", out var mode) && mode.GetInt32() != 4) continue; // triangles only
                 var attrs = prim.GetProperty("attributes");
                 if (!attrs.TryGetProperty("POSITION", out var posA)) continue;
-                var p = new Part { Name = mesh.GetProperty("primitives").GetArrayLength() > 1 ? $"{name} {++pi}" : name };
+                var p = new Part { Name = mesh.GetProperty("primitives").GetArrayLength() > 1 ? $"{name} {++pi}" : name, Node = name };
                 var raw = Floats(posA.GetInt32(), out int count, out int comps);
                 p.Positions = new float[count * 3];
                 for (int v = 0; v < count; v++)
@@ -169,6 +171,7 @@ internal static class Glb
         {
             if (!root.TryGetProperty("materials", out var mats) || index >= mats.GetArrayLength()) return;
             var m = mats[index];
+            if (m.TryGetProperty("name", out var mn) && mn.ValueKind == JsonValueKind.String) p.Material = mn.GetString();
             if (m.TryGetProperty("emissiveFactor", out _)) p.Emissive = Vec(m, "emissiveFactor", 3, 0);
             if (m.TryGetProperty("extensions", out var ext) && ext.TryGetProperty("KHR_materials_emissive_strength", out var es) && es.TryGetProperty("emissiveStrength", out var str))
                 for (int i = 0; i < 3; i++) p.Emissive[i] *= str.GetSingle();

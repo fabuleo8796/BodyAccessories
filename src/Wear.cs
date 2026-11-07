@@ -22,7 +22,10 @@ internal static class Wear
     internal static string LookName => LookNames[Math.Clamp(Plugin.Look.Value, 0, 2)];
 
     /// Builds one accessory's object (not attached yet). tris = its triangle count.
-    internal static GameObject Build(string name, List<Part> parts, out int tris)
+    internal static GameObject Build(string name, List<Part> parts, out int tris) => Build(name, parts, out tris, null);
+
+    /// pieces (if given) gets each part with its objects (the part and its outline), for animation and video.
+    internal static GameObject Build(string name, List<Part> parts, out int tris, List<(Part part, GameObject go)> pieces)
     {
         tris = 0;
         var go = new GameObject("Accessory " + name);
@@ -32,6 +35,7 @@ internal static class Wear
         {
             if (p.VertexCount == 0 || p.Triangles.Length == 0) continue;
             var child = new GameObject(p.Name);
+            pieces?.Add((p, child));
             child.transform.SetParent(go.transform, false);
             var mesh = new Mesh { name = "BodyAccessories " + p.Name };
             building.Add(mesh);
@@ -65,6 +69,7 @@ internal static class Wear
             {
                 // the game's toon outline shader on a copy of the same mesh, like Flippy's own outline parts
                 var o = new GameObject(p.Name + " outline");
+                pieces?.Add((p, o));
                 o.transform.SetParent(go.transform, false);
                 o.AddComponent<MeshFilter>().sharedMesh = mesh;
                 var or = o.AddComponent<MeshRenderer>();
@@ -182,6 +187,13 @@ internal static class Wear
         m.hideFlags = HideFlags.HideAndDontSave;
         building?.Add(m);
         return m;
+    }
+
+    /// Puts a texture (a video's RenderTexture) on a material as its colour, whichever shader it uses.
+    internal static void UseTexture(Material m, Texture t)
+    {
+        foreach (var n in new[] { "_MainTex", "_BaseTexture", "_BaseMap" }) Tex(m, n, t);
+        if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", Color.white);
     }
 
     static void Tex(Material m, string prop, Texture t)

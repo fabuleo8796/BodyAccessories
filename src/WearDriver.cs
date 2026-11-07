@@ -27,12 +27,15 @@ public class WearDriver : MonoBehaviour
         public long Size;
         public GameObject Go;
         public List<Part> Parts; // kept: a level change destroys Flippy, and his accessories with him
-        public Task<List<Part>> Loading;
+        public Task<(List<Part> parts, Anim anim)> Loading;
+        public Anim Anim;          // its movement and videos, if it has any
+        public AnimPlayer Player;
         public int Tris;
         public string Error;
     }
 
     readonly Dictionary<string, Item> items = new(StringComparer.OrdinalIgnoreCase);
+    internal IEnumerable<Item> Items => items.Values;
     float nextScan;
     IntPtr player;
     Transform visual;
@@ -40,7 +43,11 @@ public class WearDriver : MonoBehaviour
     Process blender;
     internal string LastEvent = "Waiting for an export from Blender";
 
-    void Awake() => Instance = this;
+    void Awake()
+    {
+        Instance = this;
+        SyncLink.Start();
+    }
 
     void Update()
     {
@@ -56,6 +63,8 @@ public class WearDriver : MonoBehaviour
             if (Time.unscaledTime >= nextScan) { nextScan = Time.unscaledTime + 0.5f; Scan(); }
             Finish();
             Follow();
+            Animate();
+            SyncLink.Tick();
         }
         catch (Exception e)
         {
@@ -119,7 +128,6 @@ public class WearDriver : MonoBehaviour
         foreach (var it in items.Values)
         {
             if (it.Parts == null) continue;
-            Wear.Destroy(it.Go);
             Make(it);
         }
     }
@@ -132,18 +140,16 @@ public class WearDriver : MonoBehaviour
         try
         {
             var trash = Path.Combine(Plugin.DataFolder, "trash", DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"));
-            var files = new[]
-            {
-                Path.Combine(Plugin.AccessoryFolder, name + ".glb"),
-                Path.Combine(Plugin.DataFolder, "blender", name + ".blend"),
-                Path.Combine(Plugin.DataFolder, "blender", name + ".blend1"),
-            }.Where(File.Exists).ToList();
+            // name.glb, name.anim.json and its videos (name.<material>.mp4), plus the .blend and its backup
+            var files = (Directory.Exists(Plugin.AccessoryFolder) ? Directory.GetFiles(Plugin.AccessoryFolder, name + ".*") : Array.Empty<string>())
+                .Concat(new[] { Path.Combine(Plugin.DataFolder, "blender", name + ".blend"), Path.Combine(Plugin.DataFolder, "blender", name + ".blend1") })
+                .Where(File.Exists).ToList();
             if (files.Count > 0) Directory.CreateDirectory(trash);
             foreach (var f in files) File.Move(f, Path.Combine(trash, Path.GetFileName(f)));
             var it = Get(name);
             if (it != null)
             {
-                Wear.Destroy(it.Go);
+                Unmake(it);
                 items.Remove(it.Glb);
             }
             Ui.Toast($"Deleted {name} (it's in the trash folder, just in case)");
@@ -268,11 +274,11 @@ public class WearDriver : MonoBehaviour
             it.Stamp = info.LastWriteTimeUtc;
             it.Size = info.Length;
             var path = f;
-            it.Loading = Task.Run(() => Load(path));
+            it.Loading = Task.Run(() => (Load(path), Anim.Read(path)));
         }
         foreach (var gone in items.Keys.Where(k => !files.Contains(k, StringComparer.OrdinalIgnoreCase)).ToList())
         {
-            Wear.Destroy(items[gone].Go);
+            Unmake(items[gone]);
             items.Remove(gone);
             Panel.Refresh();
         }
@@ -280,7 +286,7 @@ public class WearDriver : MonoBehaviour
 
     /// On a background thread: the .glb, and its textures decoded (each image once, even when parts share it).
     [HideFromIl2Cpp]
-    static List<Part> Load(string path)
+    internal static List<Part> Load(string path)
     {
         var parts = Glb.Read(path);
         var done = new Dictionary<int, (byte[] px, int w, int h, string err)>();
@@ -316,8 +322,8 @@ public class WearDriver : MonoBehaviour
             }
             it.Error = null;
             if (visual != null) Wear.FindGameMaterial(visual);
-            Wear.Destroy(it.Go);
-            it.Parts = task.Result;
+            it.Parts = task.Result.parts;
+            it.Anim = task.Result.anim;
             Make(it);
             LastEvent = $"{it.Name} updated at {DateTime.Now:HH:mm:ss}";
             int textured = it.Parts.Count(x => x.Pixels != null);
@@ -331,10 +337,38 @@ public class WearDriver : MonoBehaviour
     [HideFromIl2Cpp]
     void Make(Item it)
     {
-        it.Go = Wear.Build(it.Name, it.Parts, out it.Tris);
+        Unmake(it);
+        var pieces = it.Anim != null ? new List<(Part part, GameObject go)>() : null;
+        it.Go = Wear.Build(it.Name, it.Parts, out it.Tris, pieces);
         if (visual != null) Wear.Attach(it.Go, visual);
         else UnityEngine.Object.DontDestroyOnLoad(it.Go);
+        if (pieces != null)
+        {
+            it.Player = new AnimPlayer(it.Anim, it.Go, pieces);
+            if (it.Player.Empty) it.Player = null;
+        }
         it.Go.SetActive(Visible(it));
+    }
+
+    [HideFromIl2Cpp]
+    static void Unmake(Item it)
+    {
+        it.Player?.Destroy();
+        it.Player = null;
+        Wear.Destroy(it.Go);
+        it.Go = null;
+    }
+
+    /// Moves the animated accessories and keeps their videos going (only the ones being worn and shown).
+    [HideFromIl2Cpp]
+    void Animate()
+    {
+        foreach (var it in items.Values)
+            if (it.Player != null && it.Go != null && it.Go.activeInHierarchy)
+            {
+                try { it.Player.Tick(); }
+                catch (Exception e) { Plugin.Logger.LogWarning($"animation of {it.Name} stopped: {e.Message}"); it.Player.Destroy(); it.Player = null; }
+            }
     }
 
     bool Visible(Item it) => shown && IsWorn(it.Name);

@@ -23,6 +23,11 @@ interop = os.path.join(GAME, "BepInEx", "interop")
 for f in sorted(os.listdir(interop)):
     if f.endswith(".dll") and f != "UnityEngine.dll":
         lines.append(f'-r:"{os.path.join(interop, f)}"')
+lib = os.path.join(ROOT, "lib")  # other mods this one builds against (FIHSync.dll, a soft dependency)
+if os.path.isdir(lib):
+    for f in sorted(os.listdir(lib)):
+        if f.endswith(".dll"):
+            lines.append(f'-r:"{os.path.join(lib, f)}"')
 for folder in folders:
     res = os.path.join(folder, "Resources")  # embedded as-is, named after the file
     if os.path.isdir(res):
