@@ -1,4 +1,4 @@
-# Body Accessories (0.2.1 beta)
+# Body Accessories (0.2.3 beta)
 
 Model anything you want around Flippy in Blender, and wear it in Flipping is Hard. Hats, wings, signs, a floating
 moon, a giant sword through the phone: anything rigid, anywhere around him. A Flipping is Hard mod (BepInEx 6 IL2CPP)
@@ -55,7 +55,7 @@ The key can be changed in `BepInEx\config\com.fabuleo8796.bodyaccessories.cfg`.
 You need Flipping is Hard with BepInEx 6 (IL2CPP), and Blender 4.0 or newer (tested on 4.0, 4.2, 4.5 and 5.2). If you
 don't have Blender, the mod can download it for you.
 
-Download `BodyAccessories-v0.2.1.zip` from the releases and extract it into the game folder (the one with
+Download `BodyAccessories-v0.2.3.zip` from the releases and extract it into the game folder (the one with
 `Flipping is Hard.exe`). You should end up with `BepInEx\plugins\BodyAccessories\` holding `BodyAccessories.dll`,
 `template.blend` and `fih_accessory.py`. All three are needed.
 
@@ -71,7 +71,8 @@ Download `BodyAccessories-v0.2.1.zip` from the releases and extract it into the 
   - `.glb` files from anywhere else work too: drop them in that folder.
 - **Limits:** up to 300,000 triangles per accessory and textures up to 4096×4096. Rigid pieces only: objects can be
   keyframed, but there are no bones (armatures bend nothing) and no physics.
-- **See-through textures:** transparent parts of a PNG may show solid in the Game look. Try Lit.
+- **See-through textures:** PNGs with no background work: the see-through parts are cut out (in every look). A picture
+  on a plane shows from both sides when Backface Culling is off in Blender (the default).
 - **Hidden** while the phone is destroyed, and back when it's repaired. It follows you through respawns and levels.
 
 If something looks wrong, open an issue with your `BepInEx\LogOutput.log` (and
@@ -122,7 +123,7 @@ If something looks wrong, open an issue with your `BepInEx\LogOutput.log` (and
 | `src/SyncLink.cs` | Sharing accessories with other players through FIH Sync (optional) |
 | `blender/fih_accessory.py` | The Blender side: the FIH tab, export, Add texture, animation and video recording, loading the game Flippy |
 | `tests/` | Offline tests: the glTF reader and texture decoding, and the Blender download |
-| `release/` | The built mod (0.2.1) |
+| `release/` | The built mod (0.2.3) |
 | `lib/FIHSync.dll` | FIH Sync, built against (a soft dependency: Body Accessories runs without it) |
 | `tools/make_rsp.py` | Writes the compiler's response file |
 

@@ -104,6 +104,7 @@ internal static class SyncLink
                 {
                     var (px, w, h) = Shrink(p.Pixels, p.TexW, p.TexH, MaxTex);
                     var e = zip.CreateEntry($"{it.Name}/{it.Name}.{p.ImageIndex}.tex", System.IO.Compression.CompressionLevel.Fastest);
+                    e.LastWriteTime = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero); // fixed: same pixels, same hash
                     using var s = e.Open();
                     using var bw = new BinaryWriter(s);
                     bw.Write(0x54484946); // "FIHT"

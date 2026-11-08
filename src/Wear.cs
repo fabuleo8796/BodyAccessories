@@ -152,7 +152,8 @@ internal static class Wear
         int look = Math.Clamp(Plugin.Look.Value, 0, 2);
         var color = Srgb(p.Color, out float alpha);
         // a picture (with the base colour multiplied in, as glTF does), or a plain colour
-        var tex = p.Pixels != null ? Picture(p, color, alpha) : Solid(color, alpha);
+        bool cut = false;
+        var tex = p.Pixels != null ? Picture(p, color, alpha, out cut) : Solid(color, alpha);
         if (p.Pixels != null) { color = new Color32 { r = 255, g = 255, b = 255, a = 255 }; alpha = 1f; }
         Material m = null;
         if (look == 0 && gameTemplate != null)
@@ -184,9 +185,23 @@ internal static class Wear
                 m.SetColor("_EmissionColor", new Color { r = p.Emissive[0], g = p.Emissive[1], b = p.Emissive[2], a = 1f });
             }
         }
+        if (cut) Cutout(m, p.AlphaMode == "MASK" ? p.AlphaCutoff : 0.5f);
+        if (p.DoubleSided && m.HasProperty("_Cull")) m.SetFloat("_Cull", 0f); // seen from both sides, like in Blender (a picture on a plane)
         m.hideFlags = HideFlags.HideAndDontSave;
         building?.Add(m);
         return m;
+    }
+
+    /// See-through pictures (a PNG with no background): the see-through parts are cut out, the way the game's own capes
+    /// do it on the same player shader (_ALPHATEST_ON, _AlphaClip, _Cutoff, the alpha-test queue). URP's Lit and Unlit
+    /// use the same names.
+    static void Cutout(Material m, float cutoff)
+    {
+        m.EnableKeyword("_ALPHATEST_ON");
+        if (m.HasProperty("_AlphaClip")) m.SetFloat("_AlphaClip", 1f);
+        if (m.HasProperty("_Cutoff")) m.SetFloat("_Cutoff", cutoff);
+        if (m.HasProperty("_AlphaToMask")) m.SetFloat("_AlphaToMask", 1f);
+        m.renderQueue = 2450;
     }
 
     /// Puts a texture (a video's RenderTexture) on a material as its colour, whichever shader it uses.
@@ -214,9 +229,11 @@ internal static class Wear
         return new Color32 { r = S(c[0]), g = S(c[1]), b = S(c[2]), a = 255 };
     }
 
-    /// The part's decoded picture as a texture with mipmaps, tinted by the material's base colour.
-    static Texture2D Picture(Part p, Color32 tint, float alpha)
+    /// The part's decoded picture as a texture with mipmaps, tinted by the material's base colour. cut: it has see-through
+    /// parts (some pixels under half opacity).
+    static Texture2D Picture(Part p, Color32 tint, float alpha, out bool cut)
     {
+        cut = false;
         int n = p.TexW * p.TexH;
         var px = new Color32[n];
         var src = p.Pixels;
@@ -225,6 +242,7 @@ internal static class Wear
             px[i] = plain
                 ? new Color32 { r = src[k], g = src[k + 1], b = src[k + 2], a = src[k + 3] }
                 : new Color32 { r = (byte)(src[k] * tint.r / 255), g = (byte)(src[k + 1] * tint.g / 255), b = (byte)(src[k + 2] * tint.b / 255), a = (byte)(src[k + 3] * alpha) };
+        for (int i = 0; i < n && !cut; i++) cut = px[i].a < 128;
         var t = new Texture2D(p.TexW, p.TexH, TextureFormat.RGBA32, true) { name = "BodyAccessories " + p.Name, wrapMode = TextureWrapMode.Repeat, filterMode = FilterMode.Trilinear, anisoLevel = 4 };
         t.SetPixels32(px);
         t.Apply(true, true);

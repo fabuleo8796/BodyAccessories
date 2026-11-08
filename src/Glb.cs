@@ -24,6 +24,9 @@ internal sealed class Part
     public byte[] Pixels;                             // Image decoded: RGBA, bottom row first
     public int TexW, TexH;
     public string ImageError;
+    public string AlphaMode = "OPAQUE";              // glTF: OPAQUE, MASK or BLEND
+    public float AlphaCutoff = 0.5f;
+    public bool DoubleSided;                          // Blender's Backface Culling off
     public int VertexCount => Positions.Length / 3;
 }
 
@@ -176,6 +179,9 @@ internal static class Glb
             if (!root.TryGetProperty("materials", out var mats) || index >= mats.GetArrayLength()) return;
             var m = mats[index];
             if (m.TryGetProperty("name", out var mn) && mn.ValueKind == JsonValueKind.String) p.Material = mn.GetString();
+            if (m.TryGetProperty("alphaMode", out var am) && am.ValueKind == JsonValueKind.String) p.AlphaMode = am.GetString() ?? "OPAQUE";
+            if (m.TryGetProperty("alphaCutoff", out var ac) && ac.ValueKind == JsonValueKind.Number) p.AlphaCutoff = Math.Clamp(ac.GetSingle(), 0.01f, 0.99f);
+            if (m.TryGetProperty("doubleSided", out var ds) && (ds.ValueKind == JsonValueKind.True || ds.ValueKind == JsonValueKind.False)) p.DoubleSided = ds.GetBoolean();
             if (m.TryGetProperty("emissiveFactor", out _)) p.Emissive = Vec(m, "emissiveFactor", 3, 0);
             if (m.TryGetProperty("extensions", out var ext) && ext.TryGetProperty("KHR_materials_emissive_strength", out var es) && es.TryGetProperty("emissiveStrength", out var str))
                 for (int i = 0; i < 3; i++) p.Emissive[i] *= str.GetSingle();
