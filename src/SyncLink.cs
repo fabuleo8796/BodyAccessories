@@ -84,10 +84,41 @@ internal static class SyncLink
 
     // ---------------------------------------------------------------- sending (your own files)
 
+    /// Videos shared in total, at most: FIH Sync players skip anything over 30 MB by default, and a look that big takes a
+    /// while to arrive. A video that doesn't fit stays out: the others see that accessory without it.
+    const long VideoBudget = 20L * 1024 * 1024;
+    static readonly HashSet<string> warned = new();
+
+    static HashSet<string> VideosToShare(List<WearDriver.Item> items)
+    {
+        var files = new List<string>();
+        foreach (var it in items)
+            if (it.Anim != null)
+                foreach (var v in it.Anim.Videos)
+                    if (File.Exists(v.File) && !files.Contains(v.File, StringComparer.OrdinalIgnoreCase)) files.Add(v.File);
+        files.Sort(BySize); // the small ones first: as many videos as fit
+        var keep = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        long total = 0;
+        foreach (var f in files)
+        {
+            long size = new FileInfo(f).Length;
+            if (total + size <= VideoBudget) { keep.Add(f); total += size; continue; }
+            if (warned.Add(f + "|" + size))
+            {
+                Plugin.Logger.LogWarning($"video '{Path.GetFileName(f)}' ({size / 1048576.0:0.#} MB) is too big to share: other players see the accessory without it");
+                Ui.Toast($"Your video is too big to share ({size / 1048576.0:0} MB). Other players see the accessory without it: keep videos under 20 MB (shorter or 720p).");
+            }
+        }
+        return keep;
+    }
+
+    static int BySize(string a, string b) => new FileInfo(a).Length.CompareTo(new FileInfo(b).Length);
+
     static byte[] Data()
     {
         var items = Shared();
         if (items.Count == 0) return null;
+        var videos = VideosToShare(items);
         using var ms = new MemoryStream();
         using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, true))
             foreach (var it in items)
@@ -96,7 +127,7 @@ internal static class SyncLink
                 var files = new List<string> { it.Glb };
                 var anim = Path.ChangeExtension(it.Glb, null) + ".anim.json";
                 if (File.Exists(anim)) files.Add(anim);
-                if (it.Anim != null) files.AddRange(it.Anim.Videos.Select(v => v.File).Where(File.Exists));
+                if (it.Anim != null) files.AddRange(it.Anim.Videos.Select(v => v.File).Where(videos.Contains));
                 foreach (var f in files.Distinct(StringComparer.OrdinalIgnoreCase))
                     zip.CreateEntryFromFile(f, it.Name + "/" + Path.GetRelativePath(folder, f).Replace('\\', '/'), System.IO.Compression.CompressionLevel.Fastest);
                 // the textures as raw pixels, already decoded by this game: the receiver never decodes a picture

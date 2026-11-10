@@ -85,7 +85,7 @@ internal sealed class AnimPlayer
         public VideoPlayer Player;
         public RenderTexture Texture;
         public List<Material> Materials = new();
-        public float NextSeek;
+        public float NextSeek, NextPrepare;
     }
 
     public AnimPlayer(Anim anim, GameObject root, List<(Part part, GameObject go)> pieces)
@@ -120,6 +120,7 @@ internal sealed class AnimPlayer
             vp.renderMode = VideoRenderMode.RenderTexture;
             vp.playbackSpeed = (float)Math.Clamp(v.Rate, 0.05, 10.0); // Blender plays one video frame per scene frame
             vp.Prepare();
+            clip.NextPrepare = Time.unscaledTime + 2f;
             clip.Player = vp;
             clips.Add(clip);
         }
@@ -157,7 +158,12 @@ internal sealed class AnimPlayer
         if (vp == null) return;
         if (c.Texture == null)
         {
-            if (!vp.isPrepared) return;
+            if (!vp.isPrepared)
+            {
+                // Prepare does nothing on a hidden object (built during a level load): ask again once it's shown
+                if (vp.isActiveAndEnabled && Time.unscaledTime >= c.NextPrepare) { c.NextPrepare = Time.unscaledTime + 2f; vp.Prepare(); }
+                return;
+            }
             int w = (int)Math.Clamp(vp.width, 2u, 4096u), h = (int)Math.Clamp(vp.height, 2u, 4096u);
             c.Texture = new RenderTexture(w, h, 0, RenderTextureFormat.ARGB32) { name = "BodyAccessories video", hideFlags = HideFlags.HideAndDontSave };
             c.Texture.Create();
