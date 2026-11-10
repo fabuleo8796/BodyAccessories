@@ -1,4 +1,4 @@
-# Body Accessories (0.2.3 beta)
+# Body Accessories (0.2.4 beta)
 
 Model anything you want around Flippy in Blender, and wear it in Flipping is Hard. Hats, wings, signs, a floating
 moon, a giant sword through the phone: anything rigid, anywhere around him. A Flipping is Hard mod (BepInEx 6 IL2CPP)
@@ -8,7 +8,7 @@ Press **X** in game, and Blender opens on a template with **the real Flippy** in
 accessory shows up on Flippy **within a second, live**, and tumbles with him.
 
 Everything is client-side, so it's safe in multiplayer. Other players see your normal Flippy, unless they also run
-**FIH Sync** (coming soon), which shows modded players each other's accessories
+**[FIH Sync](https://github.com/Fabuleo8796/FIHSync)**, which shows modded players each other's accessories
 automatically (animations too; videos only from friends, unless you change it).
 
 ## How to use it
@@ -55,7 +55,7 @@ The key can be changed in `BepInEx\config\com.fabuleo8796.bodyaccessories.cfg`.
 You need Flipping is Hard with BepInEx 6 (IL2CPP), and Blender 4.0 or newer (tested on 4.0, 4.2, 4.5 and 5.2). If you
 don't have Blender, the mod can download it for you.
 
-Download `BodyAccessories-v0.2.3.zip` from the releases and extract it into the game folder (the one with
+Download `BodyAccessories-v0.2.4.zip` from the releases and extract it into the game folder (the one with
 `Flipping is Hard.exe`). You should end up with `BepInEx\plugins\BodyAccessories\` holding `BodyAccessories.dll`,
 `template.blend` and `fih_accessory.py`. All three are needed.
 
@@ -83,7 +83,8 @@ If something looks wrong, open an issue with your `BepInEx\LogOutput.log` (and
 - **Other players' accessories (FIH Sync) are handled as untrusted files.**
   - Pictures are never decoded on your PC: the sender's own game turns its textures into raw pixels (up to
     1024×1024), and yours only copies pixels.
-  - Videos only play from the players FIH Sync's "Videos from" allows (friends only by default).
+  - Videos only play from the players FIH Sync's "Videos from" allows (friends only by default). Your own videos are
+    shared up to 20 MB in total; a bigger one stays on your PC and the others see that accessory without it.
   - Only accessory file types get unpacked, inside FIH Sync's cache, up to 64 MB. Files that lie about their sizes
     or loop forever are refused.
   - Per player: up to 8 accessories, 150,000 triangles and 2 videos.
@@ -123,7 +124,7 @@ If something looks wrong, open an issue with your `BepInEx\LogOutput.log` (and
 | `src/SyncLink.cs` | Sharing accessories with other players through FIH Sync (optional) |
 | `blender/fih_accessory.py` | The Blender side: the FIH tab, export, Add texture, animation and video recording, loading the game Flippy |
 | `tests/` | Offline tests: the glTF reader and texture decoding, and the Blender download |
-| `release/` | The built mod (0.2.3) |
+| `release/` | The built mod (0.2.4) |
 | `lib/FIHSync.dll` | FIH Sync, built against (a soft dependency: Body Accessories runs without it) |
 | `tools/make_rsp.py` | Writes the compiler's response file |
 
