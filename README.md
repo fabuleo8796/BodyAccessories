@@ -11,6 +11,8 @@ Everything is client-side, so it's safe in multiplayer. Other players see your n
 **[FIH Sync](https://github.com/Fabuleo8796/FIHSync)**, which shows modded players each other's accessories
 automatically (animations too; videos only from friends, unless you change it).
 
+> **FIH Sync comes included** (since 0.2.5): `FIHSync.dll` is in the mod's folder, so sharing with other modded players works without installing anything else. With several of my mods installed, BepInEx runs only one copy of it (the newest).
+
 ## How to use it
 
 1. Get into a level and press **X**. The panel slides in from the right.
@@ -55,9 +57,9 @@ The key can be changed in `BepInEx\config\com.fabuleo8796.bodyaccessories.cfg`.
 You need Flipping is Hard with BepInEx 6 (IL2CPP), and Blender 4.0 or newer (tested on 4.0, 4.2, 4.5 and 5.2). If you
 don't have Blender, the mod can download it for you.
 
-Download `BodyAccessories-v0.2.4.zip` from the releases and extract it into the game folder (the one with
+Download `BodyAccessories-v0.2.5.zip` from the releases and extract it into the game folder (the one with
 `Flipping is Hard.exe`). You should end up with `BepInEx\plugins\BodyAccessories\` holding `BodyAccessories.dll`,
-`template.blend` and `fih_accessory.py`. All three are needed.
+`template.blend` and `fih_accessory.py` (all three are needed), plus `FIHSync.dll` for sharing.
 
 ## Good to know
 
